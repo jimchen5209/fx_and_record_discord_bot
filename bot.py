@@ -95,7 +95,7 @@ async def on_message(message):
             '@' + message.author.name+' : ' + message.content
     clog(dislog)
     if (message.author.bot):
-        clog("[Info] Ignoring bot message")
+        # clog("[Info] Ignoring bot message")
         return
     if (message.content.startswith(config.commandPrefix+"join")):
         if (message.author.voice.voice_channel == None):
