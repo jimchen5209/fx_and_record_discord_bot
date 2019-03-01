@@ -383,7 +383,7 @@ class TimeAnnounce:
             player.start()
             return True
     async def announceHourly(self):
-        clog("["+time.strftime("%Y/%m/%d-%H:%M:%S").replace("'", "") + "][Info] Hourly AnnounceMent Started")
+        clog("["+time.strftime("%Y/%m/%d-%H:%M:%S").replace("'", "") + "][Info] Hourly Announcement Started")
         while True:
             if time.localtime().tm_sec != 0:
                 await asyncio.sleep(3600-(time.localtime().tm_sec + time.localtime().tm_min * 60))
