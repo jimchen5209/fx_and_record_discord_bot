@@ -103,8 +103,12 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+#Vscode
+.vscode/
+
 #bot
 config.json
 logs/
 assets/
 sound.json
+data.json

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import discord
 from discord.embeds import Embed
 import os
@@ -7,7 +8,8 @@ import sys
 import time
 import logging
 import json
-
+import pytz
+from datetime import datetime
 
 if os.path.isdir("./logs") == False:
     os.mkdir("./logs")
@@ -47,6 +49,55 @@ class Config:
         self.commandPrefix = self.__configRaw["commandPrefix"]
         return
 
+class ServerConfig:
+    __defaultSetting = {
+        "timeZone" : "Asia/Taipei",
+        "timeText" : "現在時間是 {0}",
+        "ttsLang" : "zh_tw",
+        "hourFormat" : "12",
+        "timeHourly" : False
+    }
+    def __init__(self):
+        try:
+            with io.open("data.json", "r", encoding='utf8') as fs:
+                self.__dataRaw = json.load(fs)
+        except FileNotFoundError:
+            with io.open("data.json", "w", encoding='utf8') as fs:
+                json.dump({}, fs, indent=2, ensure_ascii=False)
+            self.__dataRaw = {}
+        except json.decoder.JSONDecodeError as e1:
+            print("[Error] Can't load data.json: JSON decode error:",
+                  e1.args, "\n\n[Info] Check your data file or reset it and try again.")
+            exit()
+        return
+
+    def reload(self):
+        self.__init__()
+        return
+    
+    def getServerList(self):
+        return list(self.__dataRaw)
+
+    def getSetting(self, serverID, setting):
+        if serverID not in self.__dataRaw:
+            self.__dataRaw[serverID] = self.__defaultSetting
+            self.__saveSetting()
+        if setting not in self.__dataRaw[serverID]:
+            self.__dataRaw[serverID][setting] = self.__defaultSetting[setting]
+            self.__saveSetting()
+        return self.__dataRaw[serverID][setting]
+
+    def setSetting(self, serverID, setting, value):
+        self.__dataRaw[serverID][setting] = value
+        self.__saveSetting()
+        return
+
+    def __saveSetting(self):
+        with io.open("data.json" , "w", encoding='utf8') as fs:
+            json.dump(self.__dataRaw, fs, indent=2, ensure_ascii=False)
+        return
+        
+
 def loadSoundData():
     global soundData
     try:
@@ -64,7 +115,7 @@ def loadSoundData():
             "command":{},
             "keyword":{}
         }
-    soundData["help"] = '''{0}help\n{0}join\n{0}leave\n{0}stop\n\nSoundLists:\n'''.format(config.commandPrefix)
+    soundData["help"] = '''{0}help\n{0}join\n{0}leave\n{0}stop\n{0}time\n\nSoundLists:\n'''.format(config.commandPrefix)
     for i in soundData["command"]:
         soundData["help"] += "{0}{1}\n".format(config.commandPrefix,i)
     
@@ -72,8 +123,14 @@ def loadSoundData():
 config = Config()
 discord_client = discord.Client()
 discord_token = config.token
+ttsUrl = 'https://translate.google.com.tw/translate_tts?ie=UTF-8&q="{0}"&tl={1}&client=tw-ob' #{0} for text {1} for tts language
+fmt = {
+    "12": "%I:%M %p",
+    "24": "%H:%M"
+}
 playing = {}
 loadSoundData()
+serverConfig = ServerConfig()
 
 @discord_client.event
 async def on_ready():
@@ -130,8 +187,138 @@ async def on_message(message):
         return
     elif (message.content.startswith(config.commandPrefix+"reload")):
         loadSoundData()
+        serverConfig.reload()
         await discord_client.send_message(message.channel, "Reload completed")
         return
+    elif (message.content.startswith(config.commandPrefix+"time")):
+        cmd = message.content.split(" ", 2)
+        if len(cmd) != 1:
+            if cmd[1] == "help":
+                text = '''`{0}time` - Say the current time
+                `{0}time currentSetting` - Show current time announce setting of this server.
+                `{0}time tz <timeZone>` - Set the time zone of this server. For example: `Asia/Tokyo`
+                For a list of timezone, [Click here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+                `{0}time text <text>` - Set the announce text of this server.
+                `{0}time lang <lang>` - Set the google tts language of this server.
+                `{0}time hourFormat <12/24>` - Set the hourFormat of this server.
+                `{0}time hourly [True/False]` - Set if hourly time announce is enable in this server. No value is to toggle.
+                '''.format(config.commandPrefix)
+                embed = Embed(title="Help",description=text, color=7388159)
+                await discord_client.send_message(message.channel, "Here you are", embed=embed)
+                return
+            elif cmd[1] == "currentSetting":
+                text = '''**Time Zone:** {0}
+                **Announce Text:** {1}
+                **Announce TTS Language:** {2}
+                **Hour Format:** {3}
+                **Announce Hourly:** {4}
+                '''.format(
+                    serverConfig.getSetting(message.server.id, 'timeZone'),
+                    serverConfig.getSetting(message.server.id, 'timeText'),
+                    serverConfig.getSetting(message.server.id, 'ttsLang'),
+                    serverConfig.getSetting(message.server.id, 'hourFormat'),
+                    str(serverConfig.getSetting(message.server.id, 'timeHourly'))
+                )
+                embed = Embed(title="Server Current Setting",
+                            description=text, color=7388159)
+                await discord_client.send_message(message.channel, "Here you are", embed=embed)
+                return
+            elif cmd[1] == "tz":
+                if len(cmd) == 2:
+                    text = '''**Current Time Zone:** {0}
+
+                    **Command usage:** `{1}time tz <timeZone>`
+                    '''.format(serverConfig.getSetting(message.server.id, 'timeZone'), config.commandPrefix)
+                    embed = Embed(title=None,description=text, color=7388159)
+                    await discord_client.send_message(message.channel, "Invalid Command", embed=embed)
+                    return
+                else:
+                    serverConfig.setSetting(message.server.id, 'timeZone', cmd[2])
+                    text = "**New Time Zone:** {0}".format(serverConfig.getSetting(message.server.id, 'timeZone'))
+                    embed = Embed(title=None, description=text, color=7388159)
+                    await discord_client.send_message(message.channel, "Setting Saved", embed=embed)
+            elif cmd[1] == "text":
+                if len(cmd) == 2:
+                    text = '''**Current Announce Text:** {0}
+
+                    **Command usage:** `{1}time text <text>`
+                    '''.format(serverConfig.getSetting(message.server.id, 'timeText'), config.commandPrefix)
+                    embed = Embed(title=None, description=text, color=7388159)
+                    await discord_client.send_message(message.channel, "Invalid Command", embed=embed)
+                    return
+                else:
+                    serverConfig.setSetting(message.server.id, 'timeText', cmd[2])
+                    text = "**New Announce Text:** {0}".format(serverConfig.getSetting(message.server.id, 'timeText'))
+                    embed = Embed(title=None, description=text, color=7388159)
+                    await discord_client.send_message(message.channel, "Setting Saved", embed=embed)
+            elif cmd[1] == "lang":
+                if len(cmd) == 2:
+                    text = '''**Current Announce TTS Language:** {0}
+
+                    **Command usage:** `{1}time lang <lang>`
+                    '''.format(serverConfig.getSetting(message.server.id, 'ttsLang'), config.commandPrefix)
+                    embed = Embed(title=None, description=text, color=7388159)
+                    await discord_client.send_message(message.channel, "Invalid Command", embed=embed)
+                    return
+                else:
+                    serverConfig.setSetting(message.server.id, 'ttsLang', cmd[2])
+                    text = "**New Announce TTS Language:** {0}".format(serverConfig.getSetting(message.server.id, 'ttsLang'))
+                    embed = Embed(title=None, description=text, color=7388159)
+                    await discord_client.send_message(message.channel, "Setting Saved", embed=embed)
+            elif cmd[1] == "hourFormat":
+                if len(cmd) == 2:
+                    text = '''**Current Hour Format:** {0}
+
+                    **Command usage:** `{1}time hourFormat <12/24>`
+                    '''.format(serverConfig.getSetting(message.server.id, 'hourFormat'), config.commandPrefix)
+                    embed = Embed(title=None, description=text, color=7388159)
+                    await discord_client.send_message(message.channel, "Invalid Command", embed=embed)
+                    return
+                else:
+                    if cmd[2] not in ["12", "24"]:
+                        text = '''**Current Hour Format:** {0}
+
+                        **Command usage:** `{1}time hourFormat <12/24>`
+                        '''.format(serverConfig.getSetting(message.server.id, 'hourFormat'), config.commandPrefix)
+                        embed = Embed(title=None, description=text, color=7388159)
+                        await discord_client.send_message(message.channel, "Invalid Command", embed=embed)
+                    else:
+                        serverConfig.setSetting(message.server.id, 'hourFormat', cmd[2])
+                        text = "**New Hour Format:** {0}".format(serverConfig.getSetting(message.server.id, 'hourFormat'))
+                        embed = Embed(title=None, description=text, color=7388159)
+                        await discord_client.send_message(message.channel, "Setting Saved", embed=embed)
+                return
+            elif cmd[1] == "hourly":
+                if len(cmd) == 2:
+                    serverConfig.setSetting(message.server.id, 'timeHourly', not serverConfig.getSetting(message.server.id, 'timeHourly'))
+                    text = "**New Hour Format:** {0}".format(serverConfig.getSetting(message.server.id, 'timeHourly'))
+                    embed = Embed(title=None, description=text, color=7388159)
+                    await discord_client.send_message(message.channel, "Setting Saved", embed=embed)
+                else:
+                    if cmd[2].lower() == "true":
+                        serverConfig.setSetting(message.server.id, 'timeHourly', True)
+                        text = "**New Hour Format:** {0}".format(serverConfig.getSetting(message.server.id, 'timeHourly'))
+                        embed = Embed(title=None, description=text, color=7388159)
+                        await discord_client.send_message(message.channel, "Setting Saved", embed=embed)
+                    elif cmd[2].lower() == "false":
+                        serverConfig.setSetting(message.server.id, 'timeHourly', False)
+                        text = "**New Hour Format:** {0}".format(serverConfig.getSetting(message.server.id, 'timeHourly'))
+                        embed = Embed(title=None, description=text, color=7388159)
+                        await discord_client.send_message(message.channel, "Setting Saved", embed=embed)
+                    else:
+                        text = '''**Current Announce Hourly:** {0}
+
+                        **Command usage:** `{1}time hourly [True/False]`
+                        '''.format(str(serverConfig.getSetting(message.server.id, 'timeHourly')), config.commandPrefix)
+                        embed = Embed(title=None, description=text, color=7388159)
+                        await discord_client.send_message(message.channel, "Invalid Command", embed=embed)
+                return
+            else:
+                await discord_client.send_message(message.channel, "Unknown command. Try {0}time help.".format(config.commandPrefix))
+                return
+        await timeAnnounce.announce(message.server.id, message.channel)
+        return
+        
     for i in soundData["command"]:
         if (message.content.startswith(config.commandPrefix + i)):
             if not discord_client.is_voice_connected(message.server):
@@ -159,6 +346,55 @@ async def on_message(message):
                 player.start()
             return
 
+class TimeAnnounce:
+    def __init__(self):
+        asyncio.ensure_future(self.announceHourly())
+    async def announce(self, serverID,channel = None):
+        server = discord_client.get_server(serverID)
+        if not discord_client.is_voice_connected(server):
+            if channel != None:
+                await discord_client.send_message(channel, "I'm not in a voice channel, use ~join to let me in.")
+            else:
+                return False
+        else:
+            utc = pytz.timezone("UTC")
+            utcTime = utc.localize(datetime.utcnow())
+            format = fmt[serverConfig.getSetting(serverID, "hourFormat")]
+            serverTimeZone = pytz.timezone(
+                serverConfig.getSetting(serverID, "timeZone"))
+            nowTime = utcTime.astimezone(serverTimeZone)
+            text = serverConfig.getSetting(serverID, "timeText").format(nowTime.strftime(format))
+            voice = discord_client.voice_client_in(server)
+            if voice.session_id in playing:
+                if (playing[voice.session_id].is_playing()):
+                    if channel != None:
+                        await discord_client.send_message(channel, "Nope")
+                        return
+                    else:
+                        pass
+            # print(ttsUrl.format(text, serverConfig.getSetting(
+            #     serverID, "ttsLang")))
+            if channel != None:
+                embed = Embed(title=None, description=text, color=7388159)
+                await discord_client.send_message(channel, "", embed=embed)
+            player = voice.create_ffmpeg_player(ttsUrl.format(
+                text, serverConfig.getSetting(serverID, "ttsLang")).replace(" ", "%20"))
+            playing[voice.session_id] = player
+            player.start()
+            return True
+    async def announceHourly(self):
+        clog("["+time.strftime("%Y/%m/%d-%H:%M:%S").replace("'", "") + "][Info] Hourly AnnounceMent Started")
+        while True:
+            if time.localtime().tm_sec != 0:
+                await asyncio.sleep(3600-(time.localtime().tm_sec + time.localtime().tm_min * 60))
+            else:
+                await asyncio.sleep(3600)
+            clog("["+time.strftime("%Y/%m/%d-%H:%M:%S").replace("'", "") + "][Info] The time is now {0}".format(time.strftime("%H:%M")))
+            for i in serverConfig.getServerList():
+                if serverConfig.getSetting(i, "timeHourly"):
+                    await self.announce(i)
+
+timeAnnounce = TimeAnnounce()
 
 def clog(text):
     print(text)
