@@ -1,2 +1,2 @@
-discord.py[voice]==0.16.2
+discord.py[voice]>=1.0.1
 pytz
