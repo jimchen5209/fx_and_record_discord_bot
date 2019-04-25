@@ -143,7 +143,7 @@ async def timeFunc(ctx, *args):
             **Announce TTS Language:** {4}
             **Announce Hourly:** {5}
             **Hourly Prefix Sound:** {6}
-            **Hourly Suffix Sound:** {6}
+            **Hourly Suffix Sound:** {7}
             '''.format(
                 settings.timeZone,
                 settings.timeText,
