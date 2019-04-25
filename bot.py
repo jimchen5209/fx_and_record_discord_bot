@@ -129,6 +129,7 @@ async def timeFunc(ctx, *args):
             `{0}time lang <lang>` - Set the google tts language of this server.
             `{0}time hourly [True/False]` - Set if hourly time announce is enable in this server. No value is to toggle.
             `{0}time hourlyPrefix <sound>` - Set hourly time announce sound.
+            `{0}time hourlySuffix <sound>` - Set hourly time announce sound.
             '''.format(config.commandPrefix)
             embed = discord.Embed(title="Help", description=text, color=7388159)
             await ctx.send("Here you are", embed=embed)
@@ -142,6 +143,7 @@ async def timeFunc(ctx, *args):
             **Announce TTS Language:** {4}
             **Announce Hourly:** {5}
             **Hourly Prefix Sound:** {6}
+            **Hourly Suffix Sound:** {6}
             '''.format(
                 settings.timeZone,
                 settings.timeText,
@@ -149,7 +151,8 @@ async def timeFunc(ctx, *args):
                 settings.timeFormatoClock,
                 settings.ttsLang,
                 str(settings.timeHourly),
-                settings.timeHourlyPrefixSound
+                settings.timeHourlyPrefixSound,
+                settings.timeHourlySuffixSound
             )
             embed = discord.Embed(title="Server Current Setting",
                             description=text, color=7388159)
@@ -331,6 +334,39 @@ async def timeFunc(ctx, *args):
                     data.setData(str(ctx.guild.id), timeHourlyPrefixSound=cmd[1])
                     text = "**New Hourly Prefix Sound:** {0}".format(
                         data.getData(str(ctx.guild.id)).timeHourlyPrefixSound)
+                    embed = discord.Embed(
+                        title=None, description=text, color=7388159)
+                    await ctx.send("Setting Saved", embed=embed)
+        elif cmd[0] == "hourlySuffix":
+            settings = data.getData(str(ctx.guild.id))
+            if len(cmd) == 1:
+                text = '''**Current Hourly Suffix Sound:** {0}
+
+                **Command usage:** `{1}time hourlySuffix <sound>`
+                Sounds is command name without `{1}`, use `{1}help` to get sound list.
+                `{1}hourlySuffix remove` to remove Suffix sound.
+                '''.format(settings.timeHourlySuffixSound, config.commandPrefix)
+                embed = discord.Embed(
+                    title=None, description=text, color=7388159)
+                await ctx.send("Invalid Command", embed=embed)
+                return
+            else:
+                if cmd[1] not in soundData.getSoundCommandList():
+                    text = "Sound {0} not found.".format(cmd[1])
+                    embed = discord.Embed(
+                        title=None, description=text, color=7388159)
+                    await ctx.send("Setting Failed", embed=embed)
+                elif cmd[1] == "remove":
+                    data.setData(str(ctx.guild.id), timeHourlySuffixSound="")
+                    text = "**Hourly Suffix Sound Removed**"
+                    embed = discord.Embed(
+                        title=None, description=text, color=7388159)
+                    await ctx.send("Setting Saved", embed=embed)
+                else:
+                    data.setData(str(ctx.guild.id),
+                                 timeHourlySuffixSound=cmd[1])
+                    text = "**New Hourly Suffix Sound:** {0}".format(
+                        data.getData(str(ctx.guild.id)).timeHourlySuffixSound)
                     embed = discord.Embed(
                         title=None, description=text, color=7388159)
                     await ctx.send("Setting Saved", embed=embed)

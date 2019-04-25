@@ -5,7 +5,7 @@ import os
 import io
 
 class ServerConfig:
-    def __init__(self, timeZone, timeText, timeFormatoClock, timeFormatNormal, ttsLang, timeHourly, timeHourlyPrefixSound):
+    def __init__(self, timeZone, timeText, timeFormatoClock, timeFormatNormal, ttsLang, timeHourly, timeHourlyPrefixSound, timeHourlySuffixSound):
         self.timeZone: str= timeZone
         self.timeText: str= timeText
         self.timeFormatoClock: str = timeFormatoClock
@@ -13,6 +13,7 @@ class ServerConfig:
         self.ttsLang: str= ttsLang
         self.timeHourly: bool = timeHourly
         self.timeHourlyPrefixSound: str = timeHourlyPrefixSound
+        self.timeHourlySuffixSound: str = timeHourlySuffixSound
 
 class Data:
     __defaultSetting = {
@@ -22,7 +23,8 @@ class Data:
         "timeFormatNormal": "%I:%M %p",
         "ttsLang": "zh_tw",
         "timeHourly": False,
-        "timeHourlyPrefixSound": ""
+        "timeHourlyPrefixSound": "",
+        "timeHourlySuffixSound": ""
     }
     def __init__(self):
         self.__logger = logging.getLogger("Config")
@@ -65,7 +67,8 @@ class Data:
                 self.__dataraw[server]['timeFormatNormal'],
                 self.__dataraw[server]['ttsLang'],
                 self.__dataraw[server]['timeHourly'],
-                self.__dataraw[server]['timeHourlyPrefixSound']
+                self.__dataraw[server]['timeHourlyPrefixSound'],
+                self.__dataraw[server]['timeHourlySuffixSound']
             )
         except KeyError:
             self.__mergeSetting(server)
@@ -76,7 +79,8 @@ class Data:
                 self.__dataraw[server]['timeFormatNormal'],
                 self.__dataraw[server]['ttsLang'],
                 self.__dataraw[server]['timeHourly'],
-                self.__dataraw[server]['timeHourlyPrefixSound']
+                self.__dataraw[server]['timeHourlyPrefixSound'],
+                self.__dataraw[server]['timeHourlySuffixSound']
             )
         finally:
             return obj
@@ -99,6 +103,8 @@ class Data:
                 self.__dataraw[server]['timeHourly'] = args['timeHourly']
             if 'timeHourlyPrefixSound' in args:
                 self.__dataraw[server]['timeHourlyPrefixSound'] = args['timeHourlyPrefixSound']
+            if 'timeHourlySuffixSound' in args:
+                self.__dataraw[server]['timeHourlySuffixSound'] = args['timeHourlySuffixSound']
         self.__saveData()
 
     def __mergeSetting(self, server: str):
