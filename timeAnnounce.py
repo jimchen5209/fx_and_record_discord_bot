@@ -43,7 +43,7 @@ class TimeAnnounce:
             sound = config.timeHourlyPrefixSound
             if sound != "":
                 while voice.is_playing():
-                    await asyncio.sleep(1)
+                    pass
                 voice.play(discord.FFmpegPCMAudio(
                     self.__soundData.getAssetFromCommand(sound)))
             utc = pytz.timezone("UTC")
@@ -62,13 +62,13 @@ class TimeAnnounce:
                     )
                 await channel.send(embed=embed)
             while voice.is_playing():
-                await asyncio.sleep(1)
+                pass
             voice.play(discord.FFmpegPCMAudio(self.__ttsUrl.format(
                 text, config.ttsLang).replace(" ", "%20")))
             sound = config.timeHourlySuffixSound
             if sound != "":
                 while voice.is_playing():
-                    await asyncio.sleep(1)
+                    pass
                 voice.play(discord.FFmpegPCMAudio(
                     self.__soundData.getAssetFromCommand(sound)))
             return True
