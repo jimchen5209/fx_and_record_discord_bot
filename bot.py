@@ -53,18 +53,19 @@ async def on_ready():
 @discord_client.event
 async def on_reaction_add(reaction, user):
     voice = reaction.message.guild.voice_client
-    if not reaction.custom_emoji:
-        if reaction.emoji in soundData.getSoundReactionList():
-            if voice != None:
-                if not voice.is_playing():
-                    voice.play(discord.FFmpegPCMAudio(
-                        soundData.getAssetFromReaction(reaction.emoji)))
-    else:
-        if reaction.emoji.name in soundData.getSoundReactionList():
-            if voice != None:
-                if not voice.is_playing():
-                    voice.play(discord.FFmpegPCMAudio(
-                        soundData.getAssetFromReaction(reaction.emoji.name)))
+    if reaction.count == 1:
+        if not reaction.custom_emoji:
+            if reaction.emoji in soundData.getSoundReactionList():
+                if voice != None:
+                    if not voice.is_playing():
+                        voice.play(discord.FFmpegPCMAudio(
+                            soundData.getAssetFromReaction(reaction.emoji)))
+        else:
+            if reaction.emoji.name in soundData.getSoundReactionList():
+                if voice != None:
+                    if not voice.is_playing():
+                        voice.play(discord.FFmpegPCMAudio(
+                            soundData.getAssetFromReaction(reaction.emoji.name)))
     return
 
 @discord_client.command()
