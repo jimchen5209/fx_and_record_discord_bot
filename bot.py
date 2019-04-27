@@ -50,6 +50,23 @@ async def on_ready():
     logger.info('Logged in as {0} {1}'.format(
         discord_client.user.name, discord_client.user.id))
 
+@discord_client.event
+async def on_reaction_add(reaction, user):
+    voice = reaction.message.guild.voice_client
+    if not reaction.custom_emoji:
+        if reaction.emoji in soundData.getSoundReactionList():
+            if voice != None:
+                if not voice.is_playing():
+                    voice.play(discord.FFmpegPCMAudio(
+                        soundData.getAssetFromReaction(reaction.emoji)))
+    else:
+        if reaction.emoji.name in soundData.getSoundReactionList():
+            if voice != None:
+                if not voice.is_playing():
+                    voice.play(discord.FFmpegPCMAudio(
+                        soundData.getAssetFromReaction(reaction.emoji.name)))
+    return
+
 @discord_client.command()
 async def help(ctx):
     if ctx.guild == None:

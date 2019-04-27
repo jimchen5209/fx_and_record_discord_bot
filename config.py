@@ -51,17 +51,29 @@ class SoundData:
             self.__logger.info("Generating empty sound data...")
             self.__dataraw = {
                 "command": {},
-                "keyword": {}
+                "keyword": {},
+                "reaction": {}
             }
-            with open('./config.json', 'w') as fs:
-                json.dump(self.__dataraw, fs, indent=2)
+            self.__save()
         except json.decoder.JSONDecodeError as e1:
             self.__logger.error("Can't load config.json: JSON decode error: {0}".format(str(e1.args)))
             self.__logger.error("Check your config format and try again.")
             self.__dataraw = {
                 "command": {},
-                "keyword": {}
+                "keyword": {},
+                "reaction": {}
             }
+        if "command" not in self.__dataraw:
+            self.__dataraw["command"] = {}
+            self.__save()
+        if "keyword" not in self.__dataraw:
+            self.__dataraw["keyword"] = {}
+            self.__save()
+        if "reaction" not in self.__dataraw:
+            self.__dataraw["reaction"] = {}
+            self.__save()
+        
+            
         
     def getSoundCommandList(self) -> list:
         return list(self.__dataraw["command"])
@@ -69,11 +81,21 @@ class SoundData:
     def getSoundKeyWordList(self) -> list:
         return list(self.__dataraw["keyword"])
 
+    def getSoundReactionList(self) -> list:
+        return list(self.__dataraw["reaction"])
+
     def getAssetFromCommand(self, sound) -> str:
         return self.__dataraw["command"][sound]
 
     def getAssetFromKeyWord(self, sound)-> str:
         return self.__dataraw["keyword"][sound]
+
+    def getAssetFromReaction(self, sound)-> str:
+        return self.__dataraw["reaction"][sound]
+
+    def __save(self):
+        with open('./config.json', 'w') as fs:
+            json.dump(self.__dataraw, fs, indent=2)
 
     def reload(self):
         self.__init__()
