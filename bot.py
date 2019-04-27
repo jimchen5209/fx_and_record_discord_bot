@@ -128,8 +128,8 @@ async def timeFunc(ctx, *args):
             `{0}time format <normal|oclock> <text>` - Set time format
             `{0}time lang <lang>` - Set the google tts language of this server.
             `{0}time hourly [True/False]` - Set if hourly time announce is enable in this server. No value is to toggle.
-            `{0}time hourlyPrefix <sound>` - Set hourly time announce sound.
-            `{0}time hourlySuffix <sound>` - Set hourly time announce sound.
+            `{0}time hourlyPrefix <sound|remove>` - Set hourly time announce sound.
+            `{0}time hourlySuffix <sound|remove>` - Set hourly time announce sound.
             '''.format(config.commandPrefix)
             embed = discord.Embed(title="Help", description=text, color=7388159)
             await ctx.send("Here you are", embed=embed)
@@ -311,7 +311,7 @@ async def timeFunc(ctx, *args):
             if len(cmd) == 1:
                 text = '''**Current Hourly Prefix Sound:** {0}
 
-                **Command usage:** `{1}time hourlyPrefix <sound>`
+                **Command usage:** `{1}time hourlyPrefix <sound\remove>`
                 Sounds is command name without `{1}`, use `{1}help` to get sound list.
                 `{1}hourlyPrefix remove` to remove prefix sound.
                 '''.format(settings.timeHourlyPrefixSound, config.commandPrefix)
@@ -320,16 +320,16 @@ async def timeFunc(ctx, *args):
                 await ctx.send("Invalid Command", embed=embed)
                 return
             else:
-                if cmd[1] not in soundData.getSoundCommandList():
-                    text = "Sound {0} not found.".format(cmd[1])
-                    embed = discord.Embed(title=None, description=text, color=7388159)
-                    await ctx.send("Setting Failed", embed=embed)
-                elif cmd[1] == "remove":
+                if cmd[1] == "remove":
                     data.setData(str(ctx.guild.id),timeHourlyPrefixSound="")
                     text = "**Hourly Prefix Sound Removed**"
                     embed = discord.Embed(
                         title=None, description=text, color=7388159)
                     await ctx.send("Setting Saved", embed=embed)
+                elif cmd[1] not in soundData.getSoundCommandList():
+                    text = "Sound {0} not found.".format(cmd[1])
+                    embed = discord.Embed(title=None, description=text, color=7388159)
+                    await ctx.send("Setting Failed", embed=embed)
                 else:
                     data.setData(str(ctx.guild.id), timeHourlyPrefixSound=cmd[1])
                     text = "**New Hourly Prefix Sound:** {0}".format(
@@ -342,7 +342,7 @@ async def timeFunc(ctx, *args):
             if len(cmd) == 1:
                 text = '''**Current Hourly Suffix Sound:** {0}
 
-                **Command usage:** `{1}time hourlySuffix <sound>`
+                **Command usage:** `{1}time hourlySuffix <sound|remove>`
                 Sounds is command name without `{1}`, use `{1}help` to get sound list.
                 `{1}hourlySuffix remove` to remove Suffix sound.
                 '''.format(settings.timeHourlySuffixSound, config.commandPrefix)
@@ -351,17 +351,17 @@ async def timeFunc(ctx, *args):
                 await ctx.send("Invalid Command", embed=embed)
                 return
             else:
-                if cmd[1] not in soundData.getSoundCommandList():
-                    text = "Sound {0} not found.".format(cmd[1])
-                    embed = discord.Embed(
-                        title=None, description=text, color=7388159)
-                    await ctx.send("Setting Failed", embed=embed)
-                elif cmd[1] == "remove":
+                if cmd[1] == "remove":
                     data.setData(str(ctx.guild.id), timeHourlySuffixSound="")
                     text = "**Hourly Suffix Sound Removed**"
                     embed = discord.Embed(
                         title=None, description=text, color=7388159)
                     await ctx.send("Setting Saved", embed=embed)
+                elif cmd[1] not in soundData.getSoundCommandList():
+                    text = "Sound {0} not found.".format(cmd[1])
+                    embed = discord.Embed(
+                        title=None, description=text, color=7388159)
+                    await ctx.send("Setting Failed", embed=embed)
                 else:
                     data.setData(str(ctx.guild.id),
                                  timeHourlySuffixSound=cmd[1])
