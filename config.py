@@ -1,5 +1,6 @@
 import json
 import logging
+import io
 
 class Config:
     def __init__(self, testing=False):
@@ -94,8 +95,8 @@ class SoundData:
         return self.__dataraw["reaction"][sound]
 
     def __save(self):
-        with open('./sound.json', 'w') as fs:
-            json.dump(self.__dataraw, fs, indent=2)
+        with io.open('./sound.json', 'w', encoding='utf8') as fs:
+            json.dump(self.__dataraw, fs, indent=2, ensure_ascii=False)
 
     def reload(self):
         self.__init__()
