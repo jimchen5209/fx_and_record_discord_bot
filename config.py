@@ -94,7 +94,7 @@ class SoundData:
         return self.__dataraw["reaction"][sound]
 
     def __save(self):
-        with open('./config.json', 'w') as fs:
+        with open('./sound.json', 'w') as fs:
             json.dump(self.__dataraw, fs, indent=2)
 
     def reload(self):
