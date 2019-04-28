@@ -5,7 +5,7 @@ import os
 import io
 
 class ServerConfig:
-    def __init__(self, timeZone, timeText, timeFormatoClock, timeFormatNormal, ttsLang, timeHourly, timeHourlyPrefixSound, timeHourlySuffixSound):
+    def __init__(self, timeZone, timeText, timeFormatoClock, timeFormatNormal, ttsLang, timeHourly, timeHourlyPrefixSound, timeHourlySuffixSound, lastVoiceChannel):
         self.timeZone: str= timeZone
         self.timeText: str= timeText
         self.timeFormatoClock: str = timeFormatoClock
@@ -14,6 +14,7 @@ class ServerConfig:
         self.timeHourly: bool = timeHourly
         self.timeHourlyPrefixSound: str = timeHourlyPrefixSound
         self.timeHourlySuffixSound: str = timeHourlySuffixSound
+        self.lastVoiceChannel: str = lastVoiceChannel
 
 class Data:
     __defaultSetting = {
@@ -24,7 +25,8 @@ class Data:
         "ttsLang": "zh_tw",
         "timeHourly": False,
         "timeHourlyPrefixSound": "",
-        "timeHourlySuffixSound": ""
+        "timeHourlySuffixSound": "",
+        "lastVoiceChannel" : ""
     }
     def __init__(self):
         self.__logger = logging.getLogger("Config")
@@ -68,7 +70,8 @@ class Data:
                 self.__dataraw[server]['ttsLang'],
                 self.__dataraw[server]['timeHourly'],
                 self.__dataraw[server]['timeHourlyPrefixSound'],
-                self.__dataraw[server]['timeHourlySuffixSound']
+                self.__dataraw[server]['timeHourlySuffixSound'],
+                self.__dataraw[server]['lastVoiceChannel']
             )
         except KeyError:
             self.__mergeSetting(server)
@@ -80,7 +83,8 @@ class Data:
                 self.__dataraw[server]['ttsLang'],
                 self.__dataraw[server]['timeHourly'],
                 self.__dataraw[server]['timeHourlyPrefixSound'],
-                self.__dataraw[server]['timeHourlySuffixSound']
+                self.__dataraw[server]['timeHourlySuffixSound'],
+                self.__dataraw[server]['lastVoiceChannel']
             )
         finally:
             return obj
@@ -105,6 +109,8 @@ class Data:
                 self.__dataraw[server]['timeHourlyPrefixSound'] = args['timeHourlyPrefixSound']
             if 'timeHourlySuffixSound' in args:
                 self.__dataraw[server]['timeHourlySuffixSound'] = args['timeHourlySuffixSound']
+            if 'lastVoiceChannel' in args:
+                self.__dataraw[server]['lastVoiceChannel'] = args['lastVoiceChannel']
         self.__saveData()
 
     def __mergeSetting(self, server: str):

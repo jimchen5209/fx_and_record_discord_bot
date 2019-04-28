@@ -68,6 +68,30 @@ async def on_reaction_add(reaction, user):
                             soundData.getAssetFromReaction(reaction.emoji.name)))
     return
 
+@discord_client.event
+async def on_voice_state_update(member, before, after):
+    voiceState = after
+    if voiceState == None:
+        voiceState = before
+        if voiceState == None:
+            return
+    server = voiceState.channel.guild
+    voice = server.voice_client
+    no_user = True
+    for i in voiceState.channel.member:
+        if not i.bot:
+            no_user == False
+            break
+    if no_user:
+        if voiceState.channel.id == voice.channel.id:
+            data.setData(str(server.id), lastVoiceChannel = str(voiceState.channel.id))
+            await voice.disconnect
+    else:
+        if voice == None:
+            if data.getData(str(server.id)).lastVoiceChannel == str(voiceState.channel.id):
+                await voice.connect
+    pass
+
 @discord_client.command()
 async def help(ctx):
     if ctx.guild == None:
@@ -108,7 +132,6 @@ async def leave(ctx):
     if voice != None:
         await voice.disconnect()
     return
-
 
 @discord_client.command()
 async def reload(ctx):
