@@ -78,7 +78,7 @@ async def on_voice_state_update(member, before, after):
     server = voiceState.channel.guild
     voice = server.voice_client
     no_user = True
-    for i in voiceState.channel.member:
+    for i in voiceState.channel.members:
         if not i.bot:
             no_user == False
             break
@@ -91,6 +91,7 @@ async def on_voice_state_update(member, before, after):
         if voice == None:
             if data.getData(str(server.id)).lastVoiceChannel == str(voiceState.channel.id):
                 await voice.connect
+                data.setData(str(server.id), lastVoiceChannel="")
     pass
 
 @discord_client.command()
