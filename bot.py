@@ -118,6 +118,7 @@ async def join(ctx):
     else:
         if ctx.guild.voice_client == None:
             await voice.connect()
+            data.setData(str(server.id), lastVoiceChannel="")
         else:
             if ctx.guild.voice_client.channel == voice:
                 await ctx.send("Already connected")
