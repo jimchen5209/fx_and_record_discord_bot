@@ -86,7 +86,7 @@ async def on_voice_state_update(member, before, after):
         if voice != None:
             if voiceState.channel.id == voice.channel.id:
                 data.setData(str(server.id), lastVoiceChannel = str(voiceState.channel.id))
-                await voice.disconnect
+                await voice.disconnect()
     else:
         if voice == None:
             if data.getData(str(server.id)).lastVoiceChannel == str(voiceState.channel.id):
