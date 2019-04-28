@@ -77,6 +77,17 @@ async def on_voice_state_update(member, before, after):
             return
     server = voiceState.channel.guild
     voice = server.voice_client
+    if before != None and after != None:
+        if voice != None:
+            if before.channel.id == voice.channel.id:
+                voiceState = before
+            elif after.channel.id == voice.channel.id:
+                voiceState = after
+        elif data.getData(str(server.id)).lastVoiceChannel != "":
+            if data.getData(str(server.id)).lastVoiceChannel == str(before.channel.id):
+                voiceState = before
+            elif data.getData(str(server.id)).lastVoiceChannel == str(after.channel.id):
+                voiceState = after
     no_user = True
     for i in voiceState.channel.members:
         if not i.bot:
