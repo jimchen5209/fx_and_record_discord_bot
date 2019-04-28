@@ -71,13 +71,13 @@ async def on_reaction_add(reaction, user):
 @discord_client.event
 async def on_voice_state_update(member, before, after):
     voiceState = after
-    if voiceState == None:
+    if voiceState.channel == None:
         voiceState = before
-        if voiceState == None:
+        if voiceState.channel == None:
             return
     server = voiceState.channel.guild
     voice = server.voice_client
-    if before != None and after != None:
+    if before.channel != None and after.channel != None:
         if voice != None:
             if before.channel.id == voice.channel.id:
                 voiceState = before
