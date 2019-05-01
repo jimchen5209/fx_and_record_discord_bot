@@ -1,54 +1,54 @@
 # -*- coding: utf-8 -*-
-import asyncio
-import io
-import json
+import locale
 import logging
 import os
 import sys
 import time
-import discord
 from datetime import datetime
+
+import discord
 from discord.ext import commands
-import locale
+
+from config import Config
+from config import SoundData
+from data import Data
+from timeAnnounce import TimeAnnounce
 
 locale.setlocale(locale.LC_CTYPE, '')
 
-from config import Config
-from data import Data
-from config import SoundData
-from timeAnnounce import TimeAnnounce
-
-#Setup logging
-if os.path.isdir("./logs") == False:
+# Setup logging
+if not os.path.isdir("./logs"):
     os.mkdir("./logs")
-logpath = "./logs/"+time.strftime("%Y-%m-%d-%H-%M-%S").replace("'", "")
-logformat = "[%(asctime)s][%(levelname)s][%(name)s] %(message)s"
+log_path = "./logs/" + time.strftime("%Y-%m-%d-%H-%M-%S").replace("'", "")
+log_format = "[%(asctime)s][%(levelname)s][%(name)s] %(message)s"
 logging.root.name = "VoiceLog"
 logger = logging.getLogger()
-logging.basicConfig(format=logformat, level=logging.INFO)
+logging.basicConfig(format=log_format, level=logging.INFO)
 handler = logging.FileHandler(
-    filename=logpath+'.log', encoding='utf-8', mode='w')
-handler.setFormatter(logging.Formatter(logformat))
+    filename=log_path + '.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter(log_format))
 logger.addHandler(handler)
 
-#Setup Config
+# Setup Config
 if len(sys.argv) != 1:
     if sys.argv[1] == 'test':
         config = Config(True)
     else:
-        raise SyntaxError("Invaild command santax: {0}".format(sys.argv[1]))
+        raise SyntaxError("Invalid command syntax: {0}".format(sys.argv[1]))
 else:
     config = Config()
 
 data = Data()
 soundData = SoundData()
-discord_client = commands.Bot(command_prefix=config.commandPrefix, help_command = None)
+discord_client = commands.Bot(command_prefix=config.commandPrefix, help_command=None)
 timeAnnounce = TimeAnnounce(discord_client, data, soundData)
+
 
 @discord_client.event
 async def on_ready():
     logger.info('Logged in as {0} {1}'.format(
         discord_client.user.name, discord_client.user.id))
+
 
 @discord_client.event
 async def on_reaction_add(reaction, user):
@@ -56,60 +56,62 @@ async def on_reaction_add(reaction, user):
     if reaction.count == 1:
         if not reaction.custom_emoji:
             if reaction.emoji in soundData.getSoundReactionList():
-                if voice != None:
+                if voice is not None:
                     if not voice.is_playing():
                         voice.play(discord.FFmpegPCMAudio(
                             soundData.getAssetFromReaction(reaction.emoji)))
         else:
             if reaction.emoji.name in soundData.getSoundReactionList():
-                if voice != None:
+                if voice is not None:
                     if not voice.is_playing():
                         voice.play(discord.FFmpegPCMAudio(
                             soundData.getAssetFromReaction(reaction.emoji.name)))
     return
 
+
 @discord_client.event
 async def on_voice_state_update(member, before, after):
-    voiceState = after
-    if voiceState.channel == None:
-        voiceState = before
-        if voiceState.channel == None:
+    voice_state = after
+    if voice_state.channel is None:
+        voice_state = before
+        if voice_state.channel is None:
             return
-    server = voiceState.channel.guild
+    server = voice_state.channel.guild
     voice = server.voice_client
-    if before.channel != None and after.channel != None:
-        if voice != None:
+    if before.channel is not None and after.channel is not None:
+        if voice is not None:
             if before.channel.id == voice.channel.id:
-                voiceState = before
+                voice_state = before
             elif after.channel.id == voice.channel.id:
-                voiceState = after
+                voice_state = after
         elif data.getData(str(server.id)).lastVoiceChannel != "":
             if data.getData(str(server.id)).lastVoiceChannel == str(before.channel.id):
-                voiceState = before
+                voice_state = before
             elif data.getData(str(server.id)).lastVoiceChannel == str(after.channel.id):
-                voiceState = after
+                voice_state = after
     no_user = True
-    for i in voiceState.channel.members:
+    for i in voice_state.channel.members:
         if not i.bot:
             no_user = False
             break
     if no_user:
-        if voice != None:
-            if voiceState.channel.id == voice.channel.id:
-                data.setData(str(server.id), lastVoiceChannel = str(voiceState.channel.id))
+        if voice is not None:
+            if voice_state.channel.id == voice.channel.id:
+                data.setData(str(server.id), lastVoiceChannel=str(voice_state.channel.id))
                 await voice.disconnect()
     else:
-        if voice == None:
-            if data.getData(str(server.id)).lastVoiceChannel == str(voiceState.channel.id):
-                newVC = discord_client.get_channel(voiceState.channel.id)
-                await newVC.connect()
+        if voice is None:
+            if data.getData(str(server.id)).lastVoiceChannel == str(voice_state.channel.id):
+                new_vc = discord_client.get_channel(voice_state.channel.id)
+                await new_vc.connect()
                 data.setData(str(server.id), lastVoiceChannel="")
     pass
 
+
 @discord_client.command()
-async def help(ctx):
-    if ctx.guild == None:
-        await ctx.send('This bot is not avaliable for private chat.')
+async def help_func(ctx):
+    if ctx.guild is None:
+        await ctx.send('This bot is not available for private chat.')
         return
     text = "[f]{0}\n\nSoundLists:\n[f]{1}".format(
         "\n[f]".join(["help", "join", "leave", "stop", "time"]),
@@ -119,16 +121,17 @@ async def help(ctx):
     await ctx.send("Here you are", embed=embed)
     return
 
+
 @discord_client.command()
 async def join(ctx):
-    if ctx.guild == None:
-        await ctx.send('This bot is not avaliable for private chat.')
+    if ctx.guild is None:
+        await ctx.send('This bot is not available for private chat.')
         return
     voice = ctx.author.voice.channel
-    if voice == None:
+    if voice is None:
         await ctx.send("You are not even in a voice channel")
     else:
-        if ctx.guild.voice_client == None:
+        if ctx.guild.voice_client is None:
             await voice.connect()
             data.setData(str(ctx.guild.id), lastVoiceChannel="")
         else:
@@ -138,39 +141,43 @@ async def join(ctx):
                 await ctx.guild.voice_client.move_to(voice)
     return
 
+
 @discord_client.command()
 async def leave(ctx):
-    if ctx.guild == None:
-        await ctx.send('This bot is not avaliable for private chat.')
+    if ctx.guild is None:
+        await ctx.send('This bot is not available for private chat.')
         return
     voice = ctx.guild.voice_client
-    if voice != None:
+    if voice is not None:
         await voice.disconnect()
     return
 
+
 @discord_client.command()
 async def reload(ctx):
-    if ctx.guild == None:
-        await ctx.send('This bot is not avaliable for private chat.')
+    if ctx.guild is None:
+        await ctx.send('This bot is not available for private chat.')
         return
     soundData.reload()
     await ctx.send("Reload Complete")
     return
 
+
 @discord_client.command()
 async def stop(ctx):
-    if ctx.guild == None:
-        await ctx.send('This bot is not avaliable for private chat.')
+    if ctx.guild is None:
+        await ctx.send('This bot is not available for private chat.')
         return
     voice = ctx.guild.voice_client
-    if voice != None:
+    if voice is not None:
         if voice.is_playing:
             voice.stop()
 
-@discord_client.command(name = "time")
-async def timeFunc(ctx, *args):
-    if ctx.guild == None:
-        await ctx.send('This bot is not avaliable for private chat.')
+
+@discord_client.command(name="time")
+async def time_func(ctx, *args):
+    if ctx.guild is None:
+        await ctx.send('This bot is not available for private chat.')
         return
     arg = " ".join(args)
     cmd = arg.split(" ", 1)
@@ -211,7 +218,7 @@ async def timeFunc(ctx, *args):
                 settings.timeHourlySuffixSound
             )
             embed = discord.Embed(title="Server Current Setting",
-                            description=text, color=7388159)
+                                  description=text, color=7388159)
             await ctx.send("Here you are", embed=embed)
             return
         elif cmd[0] == "tz":
@@ -247,10 +254,10 @@ async def timeFunc(ctx, *args):
                 embed = discord.Embed(title=None, description=text, color=7388159)
                 await ctx.send("Setting Saved", embed=embed)
         elif cmd[0] == "format":
-            
+
             cmd1 = arg.split(" ", 2)
             settings = data.getData(str(ctx.guild.id))
-            textInvalid = '''**Current Time Format Normal:** {0}
+            text_invalid = '''**Current Time Format Normal:** {0}
                 **Current Time Format o'clock:** {1}
 
                 **Command usage:** `{2}time format <normal|oclock> <text>`
@@ -263,19 +270,19 @@ async def timeFunc(ctx, *args):
                 '''.format(settings.timeFormatNormal, settings.timeFormatoClock, config.commandPrefix)
             if len(cmd1) == 1:
                 embed = discord.Embed(
-                    title=None, description=textInvalid, color=7388159)
+                    title=None, description=text_invalid, color=7388159)
                 await ctx.send("Invalid Command", embed=embed)
                 return
             else:
                 if cmd1[1] == "normal":
                     if len(cmd1) == 2:
                         embed = discord.Embed(
-                            title=None, description=textInvalid, color=7388159)
+                            title=None, description=text_invalid, color=7388159)
                         await ctx.send("Invalid Command", embed=embed)
                         return
                     else:
                         try:
-                            testText = datetime.now().strftime(cmd1[2])
+                            test_text = datetime.now().strftime(cmd1[2])
                         except ValueError as e1:
                             text = "**Error when previewing time:** \n{0}".format(str(e1.args))
                             embed = discord.Embed(title=None, description=text, color=7388159)
@@ -283,7 +290,7 @@ async def timeFunc(ctx, *args):
                         else:
                             data.setData(str(ctx.guild.id), timeFormatNormal=cmd1[2])
                             text = "**New Time Format Normal:** {0}\n**Preview**: {1}".format(
-                                data.getData(str(ctx.guild.id)).timeFormatNormal, testText)
+                                data.getData(str(ctx.guild.id)).timeFormatNormal, test_text)
                             embed = discord.Embed(
                                 title=None, description=text, color=7388159)
                             await ctx.send("Setting Saved", embed=embed)
@@ -292,12 +299,12 @@ async def timeFunc(ctx, *args):
                 elif cmd1[1] == "oclock":
                     if len(cmd1) == 2:
                         embed = discord.Embed(
-                            title=None, description=textInvalid, color=7388159)
+                            title=None, description=text_invalid, color=7388159)
                         await ctx.send("Invalid Command", embed=embed)
                         return
                     else:
                         try:
-                            testText = datetime.now().strftime(cmd1[2])
+                            test_text = datetime.now().strftime(cmd1[2])
                         except ValueError as e1:
                             text = "**Error when previewing time:** \n{0}".format(str(e1.args))
                             embed = discord.Embed(title=None, description=text, color=7388159)
@@ -305,13 +312,13 @@ async def timeFunc(ctx, *args):
                         else:
                             data.setData(str(ctx.guild.id), timeFormatoClock=cmd1[2])
                             text = "**New Time Format o'clock:** {0}\n**Preview**: {1}".format(
-                                data.getData(str(ctx.guild.id)).timeFormatoClock, testText)
+                                data.getData(str(ctx.guild.id)).timeFormatoClock, test_text)
                             embed = discord.Embed(
                                 title=None, description=text, color=7388159)
                             await ctx.send("Setting Saved", embed=embed)
                 else:
                     embed = discord.Embed(
-                        title=None, description=textInvalid, color=7388159)
+                        title=None, description=text_invalid, color=7388159)
                     await ctx.send("Invalid Command", embed=embed)
                     return
 
@@ -377,7 +384,7 @@ async def timeFunc(ctx, *args):
                 return
             else:
                 if cmd[1] == "remove":
-                    data.setData(str(ctx.guild.id),timeHourlyPrefixSound="")
+                    data.setData(str(ctx.guild.id), timeHourlyPrefixSound="")
                     text = "**Hourly Prefix Sound Removed**"
                     embed = discord.Embed(
                         title=None, description=text, color=7388159)
@@ -434,29 +441,31 @@ async def timeFunc(ctx, *args):
         await timeAnnounce.announce(str(ctx.guild.id), str(ctx.channel.id))
     return
 
+
 async def on_message(message: discord.Message):
-    dislog = ""
+    message_log = ""
     try:
-        dislog += "{0}@{1} in {2}({3}): {4}".format(message.author.display_name, message.author.name, message.channel.name, str(message.channel.id), message.content)
+        message_log += "{0}@{1} in {2}({3}): {4}".format(message.author.display_name, message.author.name,
+                                                         message.channel.name, str(message.channel.id), message.content)
     except AttributeError:
-        dislog += "{0}@{1}: {3}".format(message.author.display_name, message.author.name, message.content)
+        message_log += "{0}@{1}: {2}".format(message.author.display_name, message.author.name, message.content)
     if len(message.attachments) != 0:
-        dislog += "\nAttachments: \n"
+        message_log += "\nAttachments: \n"
         for i in message.attachments:
-            dislog +=  "{0}\n".format(i.url)
-    logger.info(dislog)
-    if (message.author.id == discord_client.user.id):
+            message_log += "{0}\n".format(i.url)
+    logger.info(message_log)
+    if message.author.id == discord_client.user.id:
         return
-    #SoundCommand
+    # SoundCommand
     server = message.guild
     channel = message.channel
-    if server == None:
-        await channel.send('This bot is not avaliable for private chat.')
+    if server is None:
+        await channel.send('This bot is not available for private chat.')
         return
     voice = server.voice_client
     for i in soundData.getSoundCommandList():
         if message.content.startswith(config.commandPrefix + i):
-            if voice == None:
+            if voice is None:
                 await channel.send("I'm not in a voice channel, use {0}join to let me in.".format(config.commandPrefix))
             else:
                 if voice.is_playing():
@@ -466,24 +475,25 @@ async def on_message(message: discord.Message):
             return
     for i in soundData.getSoundKeyWordList():
         if message.content.lower().find(i) != -1:
-            if voice != None:
+            if voice is not None:
                 if voice.is_playing():
                     return
                 voice.play(discord.FFmpegPCMAudio(soundData.getAssetFromKeyWord(i)))
             return
-    clockEmojis = "⏰ 🕰 🕐 🕑 🕒 🕓 🕔 🕕 🕖 🕗 🕘 🕙 🕚 🕛 🕜 🕝 🕟 🕞 🕠 🕡 🕢 🕣 🕤 🕥 🕦 🕧".split(" ")
-    for i in clockEmojis:
+    clock_emojis = "⏰ 🕰 🕐 🕑 🕒 🕓 🕔 🕕 🕖 🕗 🕘 🕙 🕚 🕛 🕜 🕝 🕟 🕞 🕠 🕡 🕢 🕣 🕤 🕥 🕦 🕧".split(" ")
+    for i in clock_emojis:
         if message.content.find(i) != -1:
             await timeAnnounce.announce(str(message.guild.id), str(message.channel.id))
+
 
 discord_client.add_listener(on_message, 'on_message')
 
 if len(sys.argv) != 1:
     if sys.argv[1] == 'test':
-        logger.info('There is no santax error,exiting...')
+        logger.info('There is no syntax error,exiting...')
         exit()
     else:
-        raise SyntaxError("Invaild command santax: {0}".format(sys.argv[1]))
+        raise SyntaxError("Invalid command syntax: {0}".format(sys.argv[1]))
 
 logger.info("Bot has started")
 logger.info("Listening ...")
