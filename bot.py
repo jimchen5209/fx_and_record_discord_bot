@@ -108,7 +108,7 @@ async def on_voice_state_update(member, before, after):
     pass
 
 
-@discord_client.command()
+@discord_client.command(name="help")
 async def help_func(ctx):
     if ctx.guild is None:
         await ctx.send('This bot is not available for private chat.')
