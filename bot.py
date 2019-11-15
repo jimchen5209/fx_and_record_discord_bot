@@ -12,6 +12,7 @@ from discord.ext import commands
 from config import Config
 from config import SoundData
 from data import Data
+from status.status import Status
 from timeAnnounce import TimeAnnounce
 
 locale.setlocale(locale.LC_CTYPE, '')
@@ -497,5 +498,6 @@ if len(sys.argv) != 1:
 
 logger.info("Bot has started")
 logger.info("Listening ...")
-
+status = Status("fx_and_record_discord_bot")
+status.set_status()
 discord_client.run(config.TOKEN)
