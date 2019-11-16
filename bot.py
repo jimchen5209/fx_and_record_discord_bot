@@ -498,6 +498,6 @@ if len(sys.argv) != 1:
 
 logger.info("Bot has started")
 logger.info("Listening ...")
-status = Status("fx_and_record_discord_bot")
+status = Status("Fx and Record Discord Bot")
 status.set_status()
 discord_client.run(config.TOKEN)
