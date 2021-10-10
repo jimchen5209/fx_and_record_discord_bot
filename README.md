@@ -1,7 +1,7 @@
 # fx_and_record_discord_bot
 
 ## Deprecated and unmaintained
-For recording, it's now on https://github.com/jimchen5209/fx_record_ts_bot  
+For recording, it's now on https://github.com/jimchen5209/fx-recorder  
 For fx playting, it's now on https://github.com/jimchen5209/discord-fx-player  
 
 # To USE:
